@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>智障紅綠燈 v2</title>
+<style>
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",Arial;display:flex;flex-direction:column;align-items:center;padding:24px;background:#fafafa}
+h1{font-size:20px;margin-bottom:8px}
+.grid{display:flex;gap:18px;margin:16px}
+.signal{width:120px;padding:12px;border-radius:12px;background:#222;color:#fff;box-shadow:0 6px 18px rgba(0,0,0,.08);text-align:center}
+.label{font-weight:700;margin-bottom:8px}
+.lamp{width:56px;height:56px;border-radius:50%;background:#333;margin:8px auto;box-shadow:inset 0 -6px 12px rgba(0,0,0,.25)}
+.red.on{background:#ff4d4d;box-shadow:0 0 18px rgba(255,77,77,.45)}
+.yellow.on{background:#ffd54d;box-shadow:0 0 18px rgba(255,213,77,.35)}
+.green.on{background:#4dd36b;box-shadow:0 0 18px rgba(77,211,107,.35)}
+.controls{display:flex;gap:8px;margin-top:12px;align-items:center}
+button,input{padding:8px 10px;border-radius:8px;border:1px solid #ddd;background:white}
+.note{margin-top:12px;color:#555;font-size:13px}
+</style>
+</head>
+<body>
+<h1>智障紅綠燈 v2 — 三個路口 S1 / S2 / S3</h1>
+<div class="grid" id="grid">
+  <div class="signal" id="S1">
+    <div class="label">S1</div>
+    <div class="lamp red" data-color="red"></div>
+    <div class="lamp yellow" data-color="yellow"></div>
+    <div class="lamp green" data-color="green"></div>
+    <div class="status" style="margin-top:8px;font-size:13px">狀態: <span class="stat">-</span></div>
+    <button class="car-btn">車子到達</button>
+  </div>
+  <div class="signal" id="S2">
+    <div class="label">S2</div>
+    <div class="lamp red" data-color="red"></div>
+    <div class="lamp yellow" data-color="yellow"></div>
+    <div class="lamp green" data-color="green"></div>
+    <div class="status" style="margin-top:8px;font-size:13px">狀態: <span class="stat">-</span></div>
+    <button class="car-btn">車子到達</button>
+  </div>
+  <div class="signal" id="S3">
+    <div class="label">S3</div>
+    <div class="lamp red" data-color="red"></div>
+    <div class="lamp yellow" data-color="yellow"></div>
+    <div class="lamp green" data-color="green"></div>
+    <div class="status" style="margin-top:8px;font-size:13px">狀態: <span class="stat">-</span></div>
+    <button class="car-btn">車子到達</button>
+  </div>
+</div>
+<div class="controls">
+  <button id="step">下一站 (Step)</button>
+  <button id="toggleAuto">自動: 關</button>
+  <label>綠燈秒數: <input id="interval" type="number" min="1" value="2" style="width:60px"></label>
+  <button id="reset">重設</button>
+</div>
+<div class="note">
+功能：綠→黃→紅過渡，車子到達才換燈，可調自動間隔。
+</div>
+<script>
+(function(){
+  const ids=['S1','S2','S3'];
+  let idx=0;
+  let autoTimer=null;
+  const intervalEl=document.getElementById('interval');
+  const statTexts={red:'紅',yellow:'黃',green:'綠'};
+
+  function setState(id,color){
+    const el=document.getElementById(id);
+    el.querySelectorAll('.lamp').forEach(l=>l.classList.remove('on'));
+    const target=el.querySelector(`.lamp.${color}`);
+    if(target) target.classList.add('on');
+    el.querySelector('.stat').textContent=statTexts[color]||'-';
+  }
+
+  function step(nextIdx=null){
+    const prev = idx;
+    if(nextIdx!==null) idx = nextIdx;
+    else idx = (idx+1) % ids.length;
+    setState(ids[prev],'yellow');
+    setTimeout(()=>{ setState(ids[prev],'red'); setState(ids[idx],'green'); }, 2000);
+  }
+
+  document.getElementById('step').addEventListener('click',()=>step());
+
+  document.getElementById('toggleAuto').addEventListener('click',e=>{
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; e.target.textContent='自動: 關'; }
+    else{
+      const sec=Math.max(1,Number(intervalEl.value)||2);
+      autoTimer=setInterval(step, sec*1000);
+      e.target.textContent='自動: 開';
+    }
+  });
+
+  document.getElementById('reset').addEventListener('click',()=>{
+    idx=0;
+    ids.forEach(id=>setState(id,'red'));
+    setState(ids[idx],'green');
+    if(autoTimer){ clearInterval(autoTimer); autoTimer=null; document.getElementById('toggleAuto').textContent='自動: 關'; }
+  });
+
+  document.querySelectorAll('.car-btn').forEach((btn,i)=>{
+    btn.addEventListener('click',()=>{ if(i!==idx) step(i); });
+  });
+
+  ids.forEach(id=>setState(id,'red'));
+  setState(ids[idx],'green');
+})();
+</script>
+</body>
+</html>
